@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🛰️ AI Surveillance Network - Neural Vision System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-glow: #00ffff;
+            --secondary-glow: #ff00ff;
+            --accent-glow: #ffff00;
+            --danger-glow: #ff4444;
+            --success-glow: #44ff44;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 255, 0, 0.1) 0%, transparent 50%),
+                var(--bg-primary);
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.2),
+                inset 0 0 50px rgba(0, 255, 255, 0.05);
+        }
+
+        .header-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(90deg, 
+                rgba(0, 255, 255, 0.1) 0%, 
+                rgba(255, 0, 255, 0.1) 50%, 
+                rgba(255, 255, 0, 0.1) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+        }
+
+        .system-title {
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .video-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 60px;
+            margin-bottom: 60px;
+        }
+
+        #video-feed {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.3),
+                0 0 60px rgba(0, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            right: 10px;
+            bottom: 70px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .detection-grid {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 19px,
+                    rgba(0, 255, 255, 0.1) 20px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 19px,
+                    rgba(0, 255, 255, 0.1) 20px
+                );
+            border-radius: 10px;
+        }
+
+        .corner-brackets {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-glow);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .corner-tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+        .corner-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+        .corner-br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+        .status-panel {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 200px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .status-item {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-value {
+            color: var(--primary-glow);
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .detection-count {
+            color: var(--success-glow);
+            text-shadow: 0 0 10px var(--success-glow);
+        }
+
+        .fps-value {
+            color: var(--accent-glow);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .threat-level {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--danger-glow);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+
+        .threat-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--danger-glow);
+            margin: 0 auto 10px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px var(--danger-glow);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .neural-network {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 0, 255, 0.5);
+            border-radius: 15px;
+            padding: 15px;
+            max-width: 300px;
+        }
+
+        .neural-node {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin: 2px;
+            animation: neuralActivity 3s infinite;
+        }
+
+        .node-active { background: var(--primary-glow); }
+        .node-processing { background: var(--secondary-glow); }
+        .node-detecting { background: var(--accent-glow); }
+
+        @keyframes neuralActivity {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-text {
+            font-size: 24px;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 4px;
+            background: rgba(0, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow));
+            width: 0%;
+            animation: loadingProgress 3s ease-in-out infinite;
+        }
+
+        @keyframes loadingProgress {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        .connection-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .mobile-qr {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .qr-placeholder {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid var(--primary-glow);
+            margin: 0 auto 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .status-panel, .threat-level, .neural-network {
+                transform: scale(0.8);
+            }
+            
+            .system-title {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <div class="system-title">🛰️ NEURAL VISION SYSTEM v2.1</div>
+            <div style="color: var(--primary-glow); font-size: 12px;">
+                <span id="timestamp">--:--:--</span> | ACTIVE
+            </div>
+        </div>
+
+        <div class="video-container">
+            <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Neural Vision Feed">
+            
+            <div class="hud-overlay">
+                <div class="detection-grid">
+                    <div class="corner-brackets">
+                        <div class="corner corner-tl"></div>
+                        <div class="corner corner-tr"></div>
+                        <div class="corner corner-bl"></div>
+                        <div class="corner corner-br"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-item">
+                    <span class="status-label">DETECTIONS</span>
+                    <span class="status-value detection-count" id="detection-count">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">PROCESSING</span>
+                    <span class="status-value fps-value" id="fps">0.0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">STATUS</span>
+                    <span class="status-value" id="running-status">INITIALIZING...</span>
+                </div>
+            </div>
+
+            <div class="threat-level">
+                <div class="threat-indicator"></div>
+                <div class="status-label">THREAT LEVEL</div>
+                <div class="status-value" style="color: var(--danger-glow);">MONITORING</div>
+            </div>
+
+            <div class="neural-network">
+                <div class="status-label">NEURAL NETWORK STATUS</div>
+                <div style="margin-top: 10px;">
+                    <span class="neural-node node-active"></span>
+                    <span class="neural-node node-processing"></span>
+                    <span class="neural-node node-detecting"></span>
+                    <span class="neural-node node-active"></span>
+                    <span class="neural-node node-processing"></span>
+                    <span class="neural-node node-detecting"></span>
+                    <span class="neural-node node-active"></span>
+                    <span class="neural-node node-processing"></span>
+                </div>
+                <div style="margin-top: 10px; font-size: 10px; color: var(--text-secondary);">
+                    YOLOv8 Neural Engine Active
+                </div>
+            </div>
+
+            <div class="connection-info">
+                <div>📱 MOBILE ACCESS</div>
+                <div id="mobile-url">http://localhost:5000</div>
+            </div>
+
+            
+        </div>
+
+        <div class="loading-screen" id="loading-screen">
+            <div class="loading-text">INITIALIZING NEURAL VISION SYSTEM</div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <div style="margin-top: 20px; color: var(--text-secondary);">
+                Loading YOLOv8 Neural Network...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // System initialization
+        let systemActive = false;
+        
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            document.getElementById('timestamp').textContent = timeString;
+        }
+
+        // Animate neural nodes
+        function animateNeuralNodes() {
+            const nodes = document.querySelectorAll('.neural-node');
+            nodes.forEach((node, index) => {
+                setTimeout(() => {
+                    node.style.animationDelay = `${index * 0.2}s`;
+                }, index * 100);
+            });
+        }
+
+        // Update system status
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading screen on first successful connection
+                    if (!systemActive && data.is_running) {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        systemActive = true;
+                    }
+
+                    // Update detection count with animation
+                    const detectionElement = document.getElementById('detection-count');
+                    const currentCount = parseInt(detectionElement.textContent) || 0;
+                    const newCount = data.detections;
+                    
+                    if (newCount !== currentCount) {
+                        detectionElement.style.transform = 'scale(1.2)';
+                        setTimeout(() => {
+                            detectionElement.style.transform = 'scale(1)';
+                        }, 200);
+                    }
+                    
+                    detectionElement.textContent = newCount;
+
+                    // Update FPS
+                    document.getElementById('fps').textContent = data.fps.toFixed(1);
+
+                    // Update status
+                    const statusElement = document.getElementById('running-status');
+                    if (data.is_running) {
+                        statusElement.textContent = 'ACTIVE';
+                        statusElement.style.color = 'var(--success-glow)';
+                    } else {
+                        statusElement.textContent = 'STANDBY';
+                        statusElement.style.color = 'var(--accent-glow)';
+                    }
+
+                    // Update threat level based on detections
+                    const threatIndicator = document.querySelector('.threat-indicator');
+                    if (data.detections > 0) {
+                        threatIndicator.style.background = 'var(--danger-glow)';
+                        document.querySelector('.threat-level .status-value').textContent = 'DETECTED';
+                    } else {
+                        threatIndicator.style.background = 'var(--success-glow)';
+                        document.querySelector('.threat-level .status-value').textContent = 'CLEAR';
+                    }
+                })
+                .catch(error => {
+                    console.error('System error:', error);
+                    document.getElementById('running-status').textContent = 'ERROR';
+                    document.getElementById('running-status').style.color = 'var(--danger-glow)';
+                });
+        }
+
+        // Update mobile URL
+        function updateMobileURL() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const port = window.location.port || '5000';
+            const mobileURL = `${protocol}//${hostname}:${port}`;
+            document.getElementById('mobile-url').textContent = mobileURL;
+        }
+
+        // Handle video feed
+        const videoFeed = document.getElementById('video-feed');
+        videoFeed.onerror = function() {
+            document.getElementById('loading-screen').style.display = 'flex';
+            document.getElementById('running-status').textContent = 'CONNECTION LOST';
+            document.getElementById('running-status').style.color = 'var(--danger-glow)';
+        };
+
+        videoFeed.onload = function() {
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                systemActive = true;
+            }, 2000);
+        };
+
+        // Initialize system
+        function initializeSystem() {
+            updateTimestamp();
+            updateMobileURL();
+            animateNeuralNodes();
+            
+            // Update every second
+            setInterval(() => {
+                updateTimestamp();
+                updateStatus();
+            }, 1000);
+
+            // Add some dramatic effect
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+            }, 3000);
+        }
+
+        // Start everything
+        initializeSystem();
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'f' || e.key === 'F') {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    document.documentElement.requestFullscreen();
+                }
+            }
+        });
+
+        // Add some visual effects
+        setInterval(() => {
+            const corners = document.querySelectorAll('.corner');
+            corners.forEach(corner => {
+                corner.style.boxShadow = `0 0 ${Math.random() * 20 + 10}px var(--primary-glow)`;
+            });
+        }, 2000);
+    </script>
+</body>
+</html>
+
